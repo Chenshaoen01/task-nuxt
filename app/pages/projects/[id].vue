@@ -153,6 +153,11 @@ function formatDate(value: string) {
   return value ? new Date(value).toLocaleDateString() : '—'
 }
 
+// 切換按鈕圖示：依「目標狀態」— 進行中用播放、已完成用打勾
+function advanceIcon(target: TaskStatus): string {
+  return target === TaskStatus.Done ? 'mdi-check-bold' : 'mdi-play'
+}
+
 onMounted(async () => {
   await loadProject()
   await loadTasks()
@@ -215,13 +220,16 @@ onMounted(async () => {
             v-if="nextStatus(item.state) !== null"
             :color="statusColor(nextStatus(item.state)!)"
             :loading="switchingId === item.id"
+            icon
             variant="tonal"
             size="small"
             class="me-1"
-            prepend-icon="mdi-arrow-right-bold"
             @click="advanceStatus(item)"
           >
-            切換為 {{ statusLabel(nextStatus(item.state)!) }}
+            <v-icon>{{ advanceIcon(nextStatus(item.state)!) }}</v-icon>
+            <v-tooltip activator="parent" location="top">
+              切換為{{ statusLabel(nextStatus(item.state)!) }}
+            </v-tooltip>
           </v-btn>
           <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEdit(item)" />
           <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="remove(item)" />
