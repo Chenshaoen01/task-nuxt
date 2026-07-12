@@ -10,13 +10,21 @@ function onLogout() {
 <template>
   <v-app>
     <v-app-bar color="primary" density="comfortable" flat>
-      <v-app-bar-title>
+      <v-app-bar-title class="flex-grow-0 me-4">
         <NuxtLink to="/projects" class="text-white text-decoration-none">
           TaskNuxt
         </NuxtLink>
       </v-app-bar-title>
 
       <template v-if="auth.isAuthenticated">
+        <v-btn
+          variant="text"
+          prepend-icon="mdi-view-list"
+          to="/projects"
+          class="mr-2"
+        >
+          專案列表
+        </v-btn>
         <v-btn
           v-if="auth.isAdmin"
           variant="text"
@@ -26,6 +34,8 @@ function onLogout() {
         >
           公司管理
         </v-btn>
+
+        <v-spacer />
 
         <v-menu location="bottom end" :close-on-content-click="false">
           <template #activator="{ props }">
