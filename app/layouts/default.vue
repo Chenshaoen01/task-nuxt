@@ -21,6 +21,7 @@ function onLogout() {
           variant="text"
           prepend-icon="mdi-view-list"
           to="/projects"
+          :active="false"
           class="mr-2"
         >
           專案列表
@@ -30,6 +31,7 @@ function onLogout() {
           variant="text"
           prepend-icon="mdi-office-building-cog"
           to="/tenants"
+          :active="false"
           class="mr-2"
         >
           公司管理
