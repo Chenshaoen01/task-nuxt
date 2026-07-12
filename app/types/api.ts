@@ -9,14 +9,29 @@ export enum TaskStatus {
 
 /** 下拉選單用的狀態選項 */
 export const statusOptions: { title: string; value: TaskStatus }[] = [
-  { title: 'Todo', value: TaskStatus.Todo },
-  { title: 'In Progress', value: TaskStatus.Inprogress },
-  { title: 'Done', value: TaskStatus.Done },
+  { title: '待辦', value: TaskStatus.Todo },
+  { title: '進行中', value: TaskStatus.Inprogress },
+  { title: '已完成', value: TaskStatus.Done },
 ]
 
 /** 數字狀態 → 顯示文字 */
 export function statusLabel(value: TaskStatus): string {
   return statusOptions.find((o) => o.value === value)?.title ?? String(value)
+}
+
+/**
+ * 狀態流轉規則：Todo → Inprogress → Done（對應後端 Task 更新時的狀態檢查）。
+ * 回傳下一個狀態；已是 Done（無下一狀態）則回傳 null。
+ */
+export function nextStatus(value: TaskStatus): TaskStatus | null {
+  switch (value) {
+    case TaskStatus.Todo:
+      return TaskStatus.Inprogress
+    case TaskStatus.Inprogress:
+      return TaskStatus.Done
+    default:
+      return null
+  }
 }
 
 /** 狀態對應的色彩（Vuetify chip color） */

@@ -2,6 +2,7 @@
 import type { ProjectResponse, TaskResponse } from '~/types/api'
 import {
   TaskStatus,
+  nextStatus,
   statusColor,
   statusLabel,
   statusOptions,
@@ -32,9 +33,11 @@ const editing = ref<TaskResponse | null>(null)
 const saving = ref(false)
 const form = reactive({
   taskTitle: '',
-  state: TaskStatus.Todo as TaskStatus,
   dueDate: '' as string,
 })
+
+// 狀態切換中的任務 Id（用於按鈕 loading 狀態）
+const switchingId = ref<string | null>(null)
 
 const headers = [
   { title: '標題', key: 'taskTitle' },
@@ -71,7 +74,6 @@ watch([filterStatus, orderDir], loadTasks)
 function openCreate() {
   editing.value = null
   form.taskTitle = ''
-  form.state = TaskStatus.Todo
   form.dueDate = ''
   dialog.value = true
 }
@@ -79,7 +81,6 @@ function openCreate() {
 function openEdit(task: TaskResponse) {
   editing.value = task
   form.taskTitle = task.taskTitle
-  form.state = task.state
   form.dueDate = task.dueDate ? task.dueDate.slice(0, 10) : ''
   dialog.value = true
 }
@@ -94,11 +95,12 @@ async function save() {
   try {
     const dueDate = new Date(form.dueDate).toISOString()
     if (editing.value) {
-      // TaskItemUpdate：taskTitle / dueDate / state（無 projectId）
+      // TaskItemUpdate：taskTitle / dueDate / state（無 projectId）。
+      // 狀態不在此編輯，維持原狀態送出；狀態切換改由列表的「切換狀態」按鈕處理。
       await tasksApi.update(editing.value.id, {
         taskTitle: form.taskTitle,
         dueDate,
-        state: form.state,
+        state: editing.value.state,
       })
     } else {
       // TaskItemCreate：projectId / taskTitle / dueDate（狀態由後端指派）
@@ -114,6 +116,26 @@ async function save() {
     error.value = '儲存任務失敗'
   } finally {
     saving.value = false
+  }
+}
+
+// 依後端流轉規則（Todo→Inprogress→Done）將任務切換到下一狀態
+async function advanceStatus(task: TaskResponse) {
+  const next = nextStatus(task.state)
+  if (next === null) return
+  switchingId.value = task.id
+  try {
+    // dueDate 已是後端回傳的 ISO 字串，原樣送回；僅變更 state
+    await tasksApi.update(task.id, {
+      taskTitle: task.taskTitle,
+      dueDate: task.dueDate,
+      state: next,
+    })
+    await loadTasks()
+  } catch {
+    error.value = '切換狀態失敗'
+  } finally {
+    switchingId.value = null
   }
 }
 
@@ -189,6 +211,18 @@ onMounted(async () => {
           {{ formatDate(item.dueDate) }}
         </template>
         <template #item.actions="{ item }">
+          <v-btn
+            v-if="nextStatus(item.state) !== null"
+            :color="statusColor(nextStatus(item.state)!)"
+            :loading="switchingId === item.id"
+            variant="tonal"
+            size="small"
+            class="me-1"
+            prepend-icon="mdi-arrow-right-bold"
+            @click="advanceStatus(item)"
+          >
+            切換為 {{ statusLabel(nextStatus(item.state)!) }}
+          </v-btn>
           <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEdit(item)" />
           <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="remove(item)" />
         </template>
@@ -200,14 +234,6 @@ onMounted(async () => {
         <v-card-title>{{ editing ? '編輯任務' : '新增任務' }}</v-card-title>
         <v-card-text>
           <v-text-field v-model="form.taskTitle" label="標題" required />
-          <v-select
-            v-if="editing"
-            v-model="form.state"
-            :items="statusOptions"
-            item-title="title"
-            item-value="value"
-            label="狀態"
-          />
           <v-text-field v-model="form.dueDate" label="截止日" type="date" required />
         </v-card-text>
         <v-card-actions>
