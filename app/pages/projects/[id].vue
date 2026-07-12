@@ -221,7 +221,7 @@ onMounted(async () => {
             :color="statusColor(nextStatus(item.state)!)"
             :loading="switchingId === item.id"
             icon
-            variant="tonal"
+            variant="text"
             size="small"
             class="me-1"
             @click="advanceStatus(item)"
