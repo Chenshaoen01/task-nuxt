@@ -104,11 +104,13 @@ export interface JwtPayload {
 export interface ProjectResponse {
   id: string
   name: string
+  description: string | null
 }
 
 /** 對應 ProjectCreate */
 export interface CreateProjectRequest {
   name: string
+  description: string | null
 }
 
 /** 對應 ProjectUpdate */
@@ -119,6 +121,7 @@ export interface TaskResponse {
   id: string
   projectId: string
   taskTitle: string
+  description: string | null
   dueDate: string
   state: TaskStatus
 }
@@ -130,6 +133,7 @@ export interface TaskResponse {
 export interface CreateTaskRequest {
   projectId: string
   taskTitle: string
+  description: string | null
   dueDate: string
 }
 
@@ -139,6 +143,7 @@ export interface CreateTaskRequest {
  */
 export interface UpdateTaskRequest {
   taskTitle: string
+  description: string | null
   dueDate: string
   state: TaskStatus
 }

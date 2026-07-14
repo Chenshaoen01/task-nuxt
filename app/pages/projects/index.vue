@@ -10,11 +10,12 @@ const error = ref('')
 // 新增 / 編輯對話框
 const dialog = ref(false)
 const editing = ref<ProjectResponse | null>(null)
-const form = reactive({ name: '' })
+const form = reactive({ name: '', description: '' })
 const saving = ref(false)
 
 const headers = [
   { title: '名稱', key: 'name' },
+  { title: '敘述', key: 'description' },
   { title: '操作', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
@@ -33,19 +34,21 @@ async function load() {
 function openCreate() {
   editing.value = null
   form.name = ''
+  form.description = ''
   dialog.value = true
 }
 
 function openEdit(project: ProjectResponse) {
   editing.value = project
   form.name = project.name
+  form.description = project.description ?? ''
   dialog.value = true
 }
 
 async function save() {
   saving.value = true
   try {
-    const body = { name: form.name }
+    const body = { name: form.name, description: form.description || null }
     if (editing.value) {
       await projectsApi.update(editing.value.id, body)
     } else {
@@ -99,6 +102,11 @@ onMounted(load)
             {{ item.name }}
           </NuxtLink>
         </template>
+        <template #item.description="{ item }">
+          <span :class="{ 'text-medium-emphasis': !item.description }">
+            {{ item.description || '—' }}
+          </span>
+        </template>
         <template #item.actions="{ item }">
           <v-btn icon="mdi-open-in-new" variant="text" size="small" :to="`/projects/${item.id}`" />
           <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEdit(item)" />
@@ -112,6 +120,7 @@ onMounted(load)
         <v-card-title>{{ editing ? '編輯專案' : '新增專案' }}</v-card-title>
         <v-card-text>
           <v-text-field v-model="form.name" label="名稱" required />
+          <v-textarea v-model="form.description" label="敘述" rows="3" auto-grow />
         </v-card-text>
         <v-card-actions>
           <v-spacer />

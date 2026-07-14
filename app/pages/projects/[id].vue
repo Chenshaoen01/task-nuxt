@@ -33,6 +33,7 @@ const editing = ref<TaskResponse | null>(null)
 const saving = ref(false)
 const form = reactive({
   taskTitle: '',
+  description: '',
   dueDate: '' as string,
 })
 
@@ -41,6 +42,7 @@ const switchingId = ref<string | null>(null)
 
 const headers = [
   { title: '標題', key: 'taskTitle' },
+  { title: '敘述', key: 'description' },
   { title: '狀態', key: 'state' },
   { title: '截止日', key: 'dueDate' },
   { title: '操作', key: 'actions', sortable: false, align: 'end' as const },
@@ -74,6 +76,7 @@ watch([filterStatus, orderDir], loadTasks)
 function openCreate() {
   editing.value = null
   form.taskTitle = ''
+  form.description = ''
   form.dueDate = ''
   dialog.value = true
 }
@@ -81,6 +84,7 @@ function openCreate() {
 function openEdit(task: TaskResponse) {
   editing.value = task
   form.taskTitle = task.taskTitle
+  form.description = task.description ?? ''
   form.dueDate = task.dueDate ? task.dueDate.slice(0, 10) : ''
   dialog.value = true
 }
@@ -99,6 +103,7 @@ async function save() {
       // 狀態不在此編輯，維持原狀態送出；狀態切換改由列表的「切換狀態」按鈕處理。
       await tasksApi.update(editing.value.id, {
         taskTitle: form.taskTitle,
+        description: form.description || null,
         dueDate,
         state: editing.value.state,
       })
@@ -107,6 +112,7 @@ async function save() {
       await tasksApi.create({
         projectId,
         taskTitle: form.taskTitle,
+        description: form.description || null,
         dueDate,
       })
     }
@@ -125,9 +131,10 @@ async function advanceStatus(task: TaskResponse) {
   if (next === null) return
   switchingId.value = task.id
   try {
-    // dueDate 已是後端回傳的 ISO 字串，原樣送回；僅變更 state
+    // dueDate / description 已是後端回傳值，原樣送回；僅變更 state
     await tasksApi.update(task.id, {
       taskTitle: task.taskTitle,
+      description: task.description,
       dueDate: task.dueDate,
       state: next,
     })
@@ -207,6 +214,11 @@ onMounted(async () => {
         :loading="loading"
         no-data-text="此條件下尚無任務"
       >
+        <template #item.description="{ item }">
+          <span :class="{ 'text-medium-emphasis': !item.description }">
+            {{ item.description || '—' }}
+          </span>
+        </template>
         <template #item.state="{ item }">
           <v-chip :color="statusColor(item.state)" size="small" label>
             {{ statusLabel(item.state) }}
@@ -242,6 +254,7 @@ onMounted(async () => {
         <v-card-title>{{ editing ? '編輯任務' : '新增任務' }}</v-card-title>
         <v-card-text>
           <v-text-field v-model="form.taskTitle" label="標題" required />
+          <v-textarea v-model="form.description" label="敘述" rows="3" auto-grow />
           <v-text-field v-model="form.dueDate" label="截止日" type="date" required />
         </v-card-text>
         <v-card-actions>
