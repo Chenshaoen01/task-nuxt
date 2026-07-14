@@ -10,7 +10,10 @@ function onLogout() {
 <template>
   <v-app>
     <v-app-bar color="primary" density="comfortable" flat>
-      <v-app-bar-title class="flex-grow-0 me-4">
+      <!-- 用 flex-0-0（flex: 0 0 auto）而非 flex-grow-0：
+           .v-toolbar-title 本身是 flex: 1 1，basis 為 0%，
+           只改 grow 會讓標題寬度塌成 0 而看不見 -->
+      <v-app-bar-title class="flex-0-0 me-4">
         <NuxtLink to="/projects" class="text-white text-decoration-none">
           TaskNuxt
         </NuxtLink>
