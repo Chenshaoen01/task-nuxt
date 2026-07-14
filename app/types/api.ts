@@ -105,6 +105,7 @@ export interface ProjectResponse {
   id: string
   name: string
   description: string | null
+  createdAt: string
 }
 
 /** 對應 ProjectCreate */
@@ -124,6 +125,7 @@ export interface TaskResponse {
   description: string | null
   dueDate: string
   state: TaskStatus
+  createdAt: string
 }
 
 /**

@@ -45,6 +45,7 @@ const headers = [
   { title: '敘述', key: 'description' },
   { title: '狀態', key: 'state' },
   { title: '截止日', key: 'dueDate' },
+  { title: '建立時間', key: 'createdAt' },
   { title: '操作', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
@@ -156,10 +157,6 @@ async function remove(task: TaskResponse) {
   }
 }
 
-function formatDate(value: string) {
-  return value ? new Date(value).toLocaleDateString() : '—'
-}
-
 // 切換按鈕圖示：依「目標狀態」— 進行中用播放、已完成用打勾
 function advanceIcon(target: TaskStatus): string {
   return target === TaskStatus.Done ? 'mdi-check-bold' : 'mdi-play'
@@ -226,6 +223,9 @@ onMounted(async () => {
         </template>
         <template #item.dueDate="{ item }">
           {{ formatDate(item.dueDate) }}
+        </template>
+        <template #item.createdAt="{ item }">
+          {{ formatDateTime(item.createdAt) }}
         </template>
         <template #item.actions="{ item }">
           <v-btn

@@ -16,6 +16,7 @@ const saving = ref(false)
 const headers = [
   { title: '名稱', key: 'name' },
   { title: '敘述', key: 'description' },
+  { title: '建立時間', key: 'createdAt' },
   { title: '操作', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
@@ -106,6 +107,9 @@ onMounted(load)
           <span :class="{ 'text-medium-emphasis': !item.description }">
             {{ item.description || '—' }}
           </span>
+        </template>
+        <template #item.createdAt="{ item }">
+          {{ formatDateTime(item.createdAt) }}
         </template>
         <template #item.actions="{ item }">
           <v-btn icon="mdi-open-in-new" variant="text" size="small" :to="`/projects/${item.id}`" />
