@@ -113,6 +113,19 @@ export function useTenantsApi() {
   }
 }
 
+/**
+ * 目前登入者所屬公司的 API（一般使用者即可呼叫，公司由後端自 token 判定）。
+ */
+export function useUserMeApi() {
+  const api = useApi()
+
+  return {
+    // 目前公司的員工清單（供任務指派對象的下拉選單使用）
+    myCompanyMembers: () =>
+      api<UserResponse[]>('/api/UserMe/myCompanyMembers'),
+  }
+}
+
 /** 員工（使用者）管理 API，需 AdminUser 角色 */
 export function useUsersApi() {
   const api = useApi()

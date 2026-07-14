@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProjectResponse, TaskResponse } from '~/types/api'
+import type { ProjectResponse, TaskResponse, UserResponse } from '~/types/api'
 import {
   TaskStatus,
   nextStatus,
@@ -13,9 +13,12 @@ const projectId = route.params.id as string
 
 const projectsApi = useProjectsApi()
 const tasksApi = useTasksApi()
+const userMeApi = useUserMeApi()
 
 const project = ref<ProjectResponse | null>(null)
 const tasks = ref<TaskResponse[]>([])
+// 指派對象下拉選單的來源：目前公司的員工
+const members = ref<UserResponse[]>([])
 const loading = ref(false)
 const error = ref('')
 
@@ -35,6 +38,8 @@ const form = reactive({
   taskTitle: '',
   description: '',
   dueDate: '' as string,
+  // 指派對象；不指派時為 null
+  assigneeUserId: null as string | null,
 })
 
 // 狀態切換中的任務 Id（用於按鈕 loading 狀態）
@@ -44,6 +49,7 @@ const headers = [
   { title: '標題', key: 'taskTitle' },
   { title: '敘述', key: 'description' },
   { title: '狀態', key: 'state' },
+  { title: '指派對象', key: 'assigneeUserName' },
   { title: '截止日', key: 'dueDate' },
   { title: '建立時間', key: 'createdAt' },
   { title: '操作', key: 'actions', sortable: false, align: 'end' as const },
@@ -54,6 +60,14 @@ async function loadProject() {
     project.value = await projectsApi.get(projectId)
   } catch {
     error.value = '載入專案失敗（可能不存在或非目前租戶）'
+  }
+}
+
+async function loadMembers() {
+  try {
+    members.value = await userMeApi.myCompanyMembers()
+  } catch {
+    error.value = '載入公司員工失敗，無法選擇指派對象'
   }
 }
 
@@ -79,6 +93,7 @@ function openCreate() {
   form.taskTitle = ''
   form.description = ''
   form.dueDate = ''
+  form.assigneeUserId = null
   dialog.value = true
 }
 
@@ -87,6 +102,7 @@ function openEdit(task: TaskResponse) {
   form.taskTitle = task.taskTitle
   form.description = task.description ?? ''
   form.dueDate = task.dueDate ? task.dueDate.slice(0, 10) : ''
+  form.assigneeUserId = task.assigneeUserId
   dialog.value = true
 }
 
@@ -107,6 +123,7 @@ async function save() {
         description: form.description || null,
         dueDate,
         state: editing.value.state,
+        assigneeUserId: form.assigneeUserId,
       })
     } else {
       // TaskItemCreate：projectId / taskTitle / dueDate（狀態由後端指派）
@@ -115,6 +132,7 @@ async function save() {
         taskTitle: form.taskTitle,
         description: form.description || null,
         dueDate,
+        assigneeUserId: form.assigneeUserId,
       })
     }
     dialog.value = false
@@ -132,12 +150,13 @@ async function advanceStatus(task: TaskResponse) {
   if (next === null) return
   switchingId.value = task.id
   try {
-    // dueDate / description 已是後端回傳值，原樣送回；僅變更 state
+    // dueDate / description / assigneeUserId 已是後端回傳值，原樣送回；僅變更 state
     await tasksApi.update(task.id, {
       taskTitle: task.taskTitle,
       description: task.description,
       dueDate: task.dueDate,
       state: next,
+      assigneeUserId: task.assigneeUserId,
     })
     await loadTasks()
   } catch {
@@ -164,7 +183,7 @@ function advanceIcon(target: TaskStatus): string {
 
 onMounted(async () => {
   await loadProject()
-  await loadTasks()
+  await Promise.all([loadTasks(), loadMembers()])
 })
 </script>
 
@@ -221,6 +240,11 @@ onMounted(async () => {
             {{ statusLabel(item.state) }}
           </v-chip>
         </template>
+        <template #item.assigneeUserName="{ item }">
+          <span :class="{ 'text-medium-emphasis': !item.assigneeUserName }">
+            {{ item.assigneeUserName || '未指派' }}
+          </span>
+        </template>
         <template #item.dueDate="{ item }">
           {{ formatDate(item.dueDate) }}
         </template>
@@ -255,6 +279,17 @@ onMounted(async () => {
         <v-card-text>
           <v-text-field v-model="form.taskTitle" label="標題" required />
           <v-textarea v-model="form.description" label="敘述" rows="3" auto-grow />
+          <v-select
+            v-model="form.assigneeUserId"
+            :items="members"
+            item-title="name"
+            item-value="id"
+            label="指派對象"
+            placeholder="未指派"
+            persistent-placeholder
+            clearable
+            no-data-text="公司尚無其他員工"
+          />
           <v-text-field v-model="form.dueDate" label="截止日" type="date" required />
         </v-card-text>
         <v-card-actions>

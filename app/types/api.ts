@@ -117,7 +117,11 @@ export interface CreateProjectRequest {
 /** 對應 ProjectUpdate */
 export type UpdateProjectRequest = CreateProjectRequest
 
-/** 對應 TaskItemGet（DueDate 後端為非 nullable DateTime） */
+/**
+ * 對應 TaskItemGet（DueDate 後端為非 nullable DateTime）。
+ * assigneeUserId／assigneeUserName 為任務的指派對象，未指派時為 null；
+ * assigneeUserName 由後端關聯 User 帶出，僅供顯示。
+ */
 export interface TaskResponse {
   id: string
   projectId: string
@@ -125,29 +129,35 @@ export interface TaskResponse {
   description: string | null
   dueDate: string
   state: TaskStatus
+  assigneeUserId: string | null
+  assigneeUserName: string | null
   createdAt: string
 }
 
 /**
  * 對應 TaskItemCreate（建立時由後端指派狀態，故不含 state）。
  * dueDate 對應後端非 nullable DateTime，為必填。
+ * assigneeUserId 選填，不指派時送 null。
  */
 export interface CreateTaskRequest {
   projectId: string
   taskTitle: string
   description: string | null
   dueDate: string
+  assigneeUserId: string | null
 }
 
 /**
  * 對應 TaskItemUpdate（更新可帶狀態，且不含 projectId）。
  * dueDate 對應後端非 nullable DateTime，為必填。
+ * assigneeUserId 選填，不指派時送 null。
  */
 export interface UpdateTaskRequest {
   taskTitle: string
   description: string | null
   dueDate: string
   state: TaskStatus
+  assigneeUserId: string | null
 }
 
 /**
